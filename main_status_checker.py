@@ -4,9 +4,10 @@ from usdt_price_etcher import  get_usdt_inr_ltp
 from future_wallet_balance import future_wallet_bal_fetcher
 import csv
 from datetime import datetime
+from future_multiplier_symbol_list import multiplier_dict
 
 
-usdt_price = get_usdt_inr_ltp()
+usdt_price = float(get_usdt_inr_ltp())
 
 
 
@@ -33,18 +34,37 @@ for i in (balances["data"]):
 
 
         else:
-            symbol = i["currency"]+"usdt"
-            try:
+            # print(" symbol here :",symbol)
+            # print(multiplier_dict.keys())
+            if i["currency"] in multiplier_dict.keys():
+                # print(multiplier_dict[i["currency"]])
+                symbol = multiplier_dict[i["currency"]]["future_symbol"]
+                multiple = float(multiplier_dict[i["currency"]]["multiple"])
+                # print("symbol, multiple")
+                # print(symbol, multiple)
+                price = float((fetch_future_ticker_data(symbol)["data"]["EXCHANGE_2"]["best_bid_price"]))  
+                # print("price :",price/multiple)
                 # print(i)
-                price = float(fetch_future_ticker_data(symbol)["data"]["EXCHANGE_2"]["best_bid_price"]) * float(usdt_price) 
-                # print("price :",price)
-                portfolio_value += (float(i["main_balance"]) + float(i["blocked_balance_order"]) ) * price * 0.99
-                Coin_value += (float(i["main_balance"]) + float(i["blocked_balance_order"]) ) * price
-                # print("portfolio_value : ",portfolio_value)
-                # print("\n")
-            except Exception as e:
-                pass
-                # print("error while fetching data error : ",e)
+                value_in_USDT = ((float(i["main_balance"]) + float(i["blocked_balance_order"]) ) * price * 0.99) / multiple
+                portfolio_value += float(value_in_USDT) * usdt_price
+                Coin_value += float(value_in_USDT) * usdt_price
+                # print("value_in_inr : ",float(value_in_USDT) * usdt_price,"\n")
+                # print("price updated",float(fetch_future_ticker_data(symbol)["data"]["EXCHANGE_2"]["best_bid_price"])
+
+
+            else:
+                symbol = i["currency"]+"usdt"
+                try:
+                    # print(i)
+                    price = float(fetch_future_ticker_data(symbol)["data"]["EXCHANGE_2"]["best_bid_price"]) * float(usdt_price) 
+                    # print("price :",price)
+                    portfolio_value += (float(i["main_balance"]) + float(i["blocked_balance_order"]) ) * price * 0.99
+                    Coin_value += (float(i["main_balance"]) + float(i["blocked_balance_order"]) ) * price
+                    # print("portfolio_value : ",portfolio_value)
+                    # print("\n")
+                except Exception as e:
+                    # print("error while fetching data error : ",e, i,"\n")
+                    pass
 
 # print("usdt_price : ",usdt_price)
 # print("blocked_usdt_fut_positions : ",round(blocked_usdt,2))
